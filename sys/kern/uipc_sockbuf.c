@@ -397,7 +397,7 @@ sysctl_handle_sb_max(SYSCTL_HANDLER_ARGS)
 	sb_max_adj = (u_quad_t)sb_max * MCLBYTES / (MSIZE + MCLBYTES);
 	return (0);
 }
-	
+
 /*
  * Allot mbufs to a sockbuf.  Attempt to scale mbmax so that mbcnt doesn't
  * become limiting if buffering efficiency is near the normal case.
@@ -417,8 +417,12 @@ sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so,
 	 * appropriate thread resource limits are available.  In that case,
 	 * we don't apply a process limit.
 	 */
-	if (cc > sb_max_adj)
-		return (0);
+    if (cc > sb_max)
+        return (0);
+
+    if (cc > sb_max_adj)
+        cc = sb_max_adj;
+
 	if (td != NULL) {
 		sbsize_limit = lim_cur(td, RLIMIT_SBSIZE);
 	} else
@@ -433,7 +437,7 @@ sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so,
 }
 
 int
-sbreserve(struct sockbuf *sb, u_long cc, struct socket *so, 
+sbreserve(struct sockbuf *sb, u_long cc, struct socket *so,
     struct thread *td)
 {
 	int error;
@@ -1297,7 +1301,7 @@ sbtoxsockbuf(struct sockbuf *sb, struct xsockbuf *xsb)
 	xsb->sb_cc = sb->sb_ccc;
 	xsb->sb_hiwat = sb->sb_hiwat;
 	xsb->sb_mbcnt = sb->sb_mbcnt;
-	xsb->sb_mcnt = sb->sb_mcnt;	
+	xsb->sb_mcnt = sb->sb_mcnt;
 	xsb->sb_ccnt = sb->sb_ccnt;
 	xsb->sb_mbmax = sb->sb_mbmax;
 	xsb->sb_lowat = sb->sb_lowat;
